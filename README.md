@@ -20,4 +20,7 @@ make clean && make && make run
   <tr>
     <td>B</td><td>Pause</td>
   </tr>
+  <tr>
+    <td>Crank</td><td>Increase/Decrease probability of a cell being alive on init</td>
+  </tr>
 </table>

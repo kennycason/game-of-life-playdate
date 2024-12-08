@@ -11,15 +11,16 @@ static bool** fg = NULL;
 static bool** bg = NULL;
 
 static bool isPaused = false;
+static int newCellProbability = 50;
 
 static bool isAlive(int x, int y) {
     return fg[(x + CELL_COLS) % CELL_COLS][(y + CELL_ROWS) % CELL_ROWS];
 }
 
-// Any live cell with fewer than 2 live neighbors dies, as if caused by underpopulation.
-// Any live cell with more than 3 live neighbors dies, as if by overcrowding.
-// Any live cell with two or 3 live neighbors lives on to the next generation.
-// Any dead cell with exactly 3 live neighbors becomes a live cell.
+// any live cell with fewer than 2 live neighbors dies, as if caused by underpopulation.
+// any live cell with more than 3 live neighbors dies, as if by overcrowding.
+// any live cell with two or 3 live neighbors lives on to the next generation.
+// any dead cell with exactly 3 live neighbors becomes a live cell.
 static bool nextState(int x, int y) {
     int neighbors = 0;
     for (int dx = -1; dx <= 1; dx++) {
@@ -52,7 +53,7 @@ static void step(void) {
 static void randomizeGrid(void) {
     for (int y = 0; y < CELL_ROWS; y++) {
         for (int x = 0; x < CELL_COLS; x++) {
-            fg[x][y] = (rand() % 2 == 0); // TODO make variable via crank
+            fg[x][y] = (rand() % 100 < newCellProbability);
         }
     }
 }
@@ -110,17 +111,29 @@ static int update(void* ud) {
     if (pushed & kButtonB) {
         isPaused = !isPaused;
     }
+
     if (pushed & kButtonUp) {
         resizeCell(CELL_SIZE + 1);
-    }
-    if (pushed & kButtonDown && CELL_SIZE > 1) {
+    } else if (pushed & kButtonDown && CELL_SIZE > 1) {
         resizeCell(CELL_SIZE - 1);
     }
+
+    float crankChange = pd->system->getCrankChange();
+    if (crankChange > 0) { // clockwise
+        newCellProbability += 1;
+        if (newCellProbability > 100) newCellProbability = 100;
+        randomizeGrid();
+    } else if (crankChange < 0) { // counter-clockwise
+        newCellProbability -= 1;
+        if (newCellProbability < 1) newCellProbability = 1;
+        randomizeGrid();
+    }
+
     if (!isPaused) {
         step();
     }
     drawGrid();
-    pd->system->drawFPS(0, 0);
+//    pd->system->drawFPS(0, 0);
 
     return 1;
 }
